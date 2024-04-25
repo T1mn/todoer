@@ -7,7 +7,7 @@ from utils.param import Param
 from key import KeyListenerThread, GlobalKeyListener
 from count_down import CountdownWindow
 from utils.data_converter import DataConverter
-from short_cut import ShortcutHandler
+from shortcuts.shortcut_manager import ShortcutManager
 
 class TodoListWidget(QListWidget):
     def __init__(self):
@@ -15,17 +15,13 @@ class TodoListWidget(QListWidget):
         self.items = []
         self.timer_started = False  # 用于跟踪任务是否已经开始
         self.timer = QTimer()  # 创建 QTimer 对象
-
         self.__init_ui()
-        self.__init_signal_slot()
         self.load_items()
         self.time_remaining = 20 * 60
         self.itemDoubleClicked.connect(self.handle_item_double_clicked)
     def handle_item_double_clicked(self, item):
         print('Item double clicked, its text is:', item.text())
         self.__start_item()
-    def __init_signal_slot(self):
-        print("[TodoListWidget] init signal slot")
     def __init_ui(self):
         self.__init_menu()
     def __init_menu(self):
@@ -283,12 +279,23 @@ class TDLW(QWidget):
         self.status_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # 设置大小策略为可扩展的宽度和固定的高度
         # 固定的高度爲30
         self.status_bar.setFixedHeight(Param.status_bar_height)
+    def set_status_bar_bg_color_with_delay(self, color, delay_ms=200):
+        self.status_bar.setStyleSheet("background-color: {};".format(color))
+        QTimer.singleShot(delay_ms, lambda: self.status_bar.setStyleSheet("background-color: gray;"))  # 两秒后恢复为黑色
     def __init_lineedit(self):
         self.input_lineedit = QLineEdit()
         self.input_lineedit.returnPressed.connect(self.add_item)
     def __init_list_widget(self):
         self.list_widget = TodoListWidget()
-
+    def save_items(self):
+        self.list_widget.save_items()
+        self.set_status_bar_bg_color_with_delay("green")
+    def load_items(self):
+        self.list_widget.load_items()
+        self.set_status_bar_bg_color_with_delay("green")
+    def sort_items(self):
+        self.list_widget.sort_items()
+        self.set_status_bar_bg_color_with_delay("green")
     def __set_layout(self):
         self.lo = QVBoxLayout()
         self.lo.setContentsMargins(0, 0, 0, 0)
@@ -329,11 +336,8 @@ class TDLW(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     todo_widget = TDLW()
-    ShortcutHandler('Alt+Q', todo_widget.close).set_shortcut(todo_widget)
-    ShortcutHandler('Ctrl+S', todo_widget.list_widget.save_items).set_shortcut(todo_widget)
-    ShortcutHandler('Ctrl+L', todo_widget.list_widget.load_items).set_shortcut(todo_widget)
-    ShortcutHandler('Ctrl+R', todo_widget.list_widget.sort_items).set_shortcut(todo_widget)
-
+    shortcut_manager = ShortcutManager('config/shortcut_key.json')
+    shortcut_manager.load_shortcuts(todo_widget)
     todo_widget.show()
     thread = KeyListenerThread()
     thread.listener.key_pressed.connect(todo_widget.show_toggle)

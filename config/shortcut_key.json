@@ -1,0 +1,21 @@
+{
+    "shortcuts": [
+      {
+        "key": "Alt+Q",
+        "action": "close"
+      },
+      {
+        "key": "Ctrl+S",
+        "action": "save_items"
+      },
+      {
+        "key": "Ctrl+L",
+        "action": "load_items"
+      },
+      {
+        "key": "Ctrl+R",
+        "action": "sort_items"
+      }
+    ]
+  }
+  
