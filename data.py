@@ -23,10 +23,12 @@ class Data:
         for item in items:
             item_data = {
                 'text': item.text(),
+                'createtime': item.createtime.toString(Qt.ISODate) if item.createtime else None,
                 'category': item.category,
                 'deadline': item.deadline.toString(Qt.ISODate) if item.deadline else None,
                 'done': item.checkbox.isChecked(),
                 'consume_time': item.consume_time,
+                'donetime': item.donetime.toString(Qt.ISODate) if item.donetime else None,
             }
             item_list.append(item_data)
 

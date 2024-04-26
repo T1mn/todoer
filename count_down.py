@@ -53,11 +53,11 @@ class CountdownWindow(QWidget):
         self.remaining_time -= 1
         if self.remaining_time <= 0:
             self.timer.stop()
-            self.close()
             # show a message box
-            msg_box = QMessageBox()
+            msg_box = QMessageBox(self)
             msg_box.setText('Time is up! Please take a break.')
             msg_box.exec()
+            self.close()
         else:
             self.update_display()
 

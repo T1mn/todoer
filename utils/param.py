@@ -19,3 +19,4 @@ class Param:
     status_bar_height = 20
     date_regex = r"(?P<year>\d{4})[年/](?P<month>\d{1,2})[月/](?P<day>\d{1,2})[日]?"
     days_regex = r"(?P<relativedate>(?:#今天|#明天|#后天|#大后天|#两天后|#三天后|#\d+天后))"
+    remain_time = 20 * 60

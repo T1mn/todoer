@@ -17,7 +17,7 @@ class TodoListWidget(QListWidget):
         self.timer = QTimer()  # 创建 QTimer 对象
         self.__init_ui()
         self.load_items()
-        self.time_remaining = 20 * 60
+        self.time_remaining = Param.remain_time
         self.itemDoubleClicked.connect(self.handle_item_double_clicked)
     def handle_item_double_clicked(self, item):
         print('Item double clicked, its text is:', item.text())
@@ -57,7 +57,7 @@ class TodoListWidget(QListWidget):
         if item:
             # 创建并显示倒计时窗口，设置倒计时时间为20分钟
             self.countdown_window = CountdownWindow(parent=self, item = item)
-            self.countdown_window.start_countdown(20 * 60)  # 20分钟倒计时
+            self.countdown_window.start_countdown(self.time_remaining)  # 20分钟倒计时
             self.countdown_window.show()
             self.timer_started = True
             print('Task started')
@@ -105,6 +105,10 @@ class TodoListItem(QListWidgetItem):
                 self.deadline = QDate.fromString(arg['deadline'], Qt.ISODate) if arg['deadline'] else None
             if arg.get('done'):
                 self.checkbox.setChecked(arg['done'])
+            if arg.get('donetime'):
+                self.donetime = QDate.fromString(arg['donetime'], Qt.ISODate) if arg['donetime'] else None
+            if arg.get('createtime'):
+                self.createtime = QDate.fromString(arg['createtime'], Qt.ISODate) if arg['createtime'] else None
             self.init_widget()
         elif isinstance(arg, TodoListItem):
             print("[TodoListItem] init by TodoListItem")
@@ -123,6 +127,8 @@ class TodoListItem(QListWidgetItem):
         self._consume_time = 0 #seconds
         self.category = "default"
         self.deadline = None
+        self.donetime = None
+        self.createtime = None
         self.checkbox = QCheckBox()
         self.widget = QWidget()
         self.priot_label = QLabel()
@@ -130,7 +136,6 @@ class TodoListItem(QListWidgetItem):
     @property
     def consume_time(self):
         return self._consume_time
-
     @consume_time.setter
     def consume_time(self, value):
         if value < 0:
@@ -230,10 +235,13 @@ class TodoListItem(QListWidgetItem):
             font = self.font()
             font.setStrikeOut(True)
             self.setFont(font)
+            # 获取当前时间到self.donetime
+            self.donetime = QDate.currentDate()
         else:
             font = self.font()
             font.setStrikeOut(False)
             self.setFont(font)
+            self.donetime = None
     def get_checkbox(self):
         return self.checkbox
 class TDLW(QWidget):
@@ -272,7 +280,7 @@ class TDLW(QWidget):
             self.move(first_screen.width(), screen.height() - self.height())
         else:
             self.move(screen.width() - self.width(), screen.height() - self.height())
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)  # 设置为无边框模式，并保持最顶层显示
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)  # 设置为无边框模式，并保持最顶层显示
     def __init_status_bar(self):
         self.status_bar = QWidget()
         self.status_bar.setStyleSheet("background-color: gray;")  # 设置背景色为黑色
@@ -313,6 +321,7 @@ class TDLW(QWidget):
         text = self.input_lineedit.text()
         if text:
             item = TodoListItem(text, self.list_widget)
+            item.createtime = QDate.currentDate()
             self.list_widget.addItem(item)
             self.input_lineedit.clear()
     def delete_item(self):
@@ -332,7 +341,9 @@ class TDLW(QWidget):
             self.hide()
         else:
             self.show()
-
+    def closeEvent(self, event):
+        app.quit()  # 退出 Qt 事件循环
+        event.accept()
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     todo_widget = TDLW()
@@ -343,6 +354,3 @@ if __name__ == '__main__':
     thread.listener.key_pressed.connect(todo_widget.show_toggle)
     thread.start()
     sys.exit(app.exec_())
-
-
-
