@@ -1,0 +1,43 @@
+{
+    "ui": {
+        "opacity": 0.9,
+        "window_width": 300,
+        "window_height": 400,
+        "status_bar_height": 5,
+        "font_family": "Arial",
+        "font_size": 10
+    },
+    "colors": {
+        "categories": {
+            "work": "rgb(144, 238, 144)",
+            "life": "rgb(255, 255, 144)",
+            "study": "rgb(255, 192, 203)",
+            "default": "rgb(255, 255, 255)"
+        },
+        "priorities": {
+            "urgent": "rgb(255, 0, 0)",
+            "high": "rgb(255, 165, 0)",
+            "medium": "rgb(255, 215, 0)",
+            "low": "rgb(0, 128, 0)",
+            "none": "rgb(0, 0, 128)"
+        },
+        "status": {
+            "success": "green",
+            "info": "gray",
+            "error": "red"
+        }
+    },
+    "data": {
+        "storage_file": ".todo.json"
+    },
+    "logic": {
+        "countdown_minutes": 25
+    },
+    "shortcuts": {
+        "toggle_window": "Alt+T",
+        "save_items": "Ctrl+S",
+        "load_items": "Ctrl+L",
+        "sort_items": "Ctrl+R",
+        "quit_app": "Alt+Q"
+    }
+} 
