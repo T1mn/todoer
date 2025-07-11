@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMessageBox
 from model.todo_model import TodoModel, TodoItem
 from view.main_window import MainWindow
 from view.info_dialog import InfoDialog
+from timer.timer_controller import TimerController
 from utils.data_converter import DataConverter
 from utils.ai_service import GeminiService
 from utils.ai_converter import AIConverter
@@ -20,6 +21,12 @@ class AppController(QObject):
         self._save_timer.setSingleShot(True)
         self._save_timer.timeout.connect(self._delayed_save)
         
+        # 初始化计时器控制器
+        self._timer_controller = TimerController()
+        
+        # 将Timer按钮集成到主界面
+        self._integrate_timer_button()
+        
         # 初始化 AI 服务
         try:
             self._ai_service = GeminiService()
@@ -28,6 +35,38 @@ class AppController(QObject):
             self._ai_service = None
         
         self._connect_signals()
+
+    def _integrate_timer_button(self):
+        """将Timer按钮集成到主界面布局"""
+        try:
+            # 获取Timer按钮
+            timer_button = self._timer_controller.get_timer_button()
+            
+            # 获取主界面的按钮布局
+            main_layout = self._view.main_layout
+            
+            # 找到按钮布局（应该是第3个项目：status_bar, input, btn_layout, list_view）
+            for i in range(main_layout.count()):
+                item = main_layout.itemAt(i)
+                if item and hasattr(item, 'layout') and item.layout():
+                    btn_layout = item.layout()
+                    # 检查是否是按钮布局（包含Load和Sort按钮）
+                    if (btn_layout.count() >= 2 and 
+                        hasattr(btn_layout.itemAt(0), 'widget') and
+                        hasattr(btn_layout.itemAt(1), 'widget')):
+                        
+                        load_widget = btn_layout.itemAt(0).widget()
+                        sort_widget = btn_layout.itemAt(1).widget()
+                        
+                        if (hasattr(load_widget, 'text') and load_widget.text() == 'Load' and
+                            hasattr(sort_widget, 'text') and sort_widget.text() == 'Sort'):
+                            # 找到了正确的按钮布局，在中间插入Timer按钮
+                            btn_layout.insertWidget(1, timer_button)
+                            print("✅ Timer按钮已成功集成到主界面")
+                            break
+                    
+        except Exception as e:
+            print(f"集成Timer按钮失败: {e}")
 
     def _connect_signals(self):
         """连接视图和模型的信号到控制器的槽函数"""

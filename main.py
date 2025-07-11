@@ -68,8 +68,8 @@ def main():
         
         app = QApplication(sys.argv)
 
-        # 确保当最后一个窗口关闭时，应用程序也会退出
-        app.setQuitOnLastWindowClosed(True)
+        # 修改退出策略：只有在明确请求时才退出，避免因对话框关闭导致意外退出
+        app.setQuitOnLastWindowClosed(False)
 
         # 1. 加载配置
         config = load_config()

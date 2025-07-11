@@ -1,0 +1,10 @@
+{
+  "default_time": 900,
+  "preset_times": [
+    300,
+    900,
+    1500,
+    2700
+  ],
+  "last_used_time": 900
+}

@@ -106,6 +106,7 @@ class MainWindow(QWidget):
         
         self.list_view = TodoListView()
         self.load_btn = QPushButton('Load')
+        # 在这里会通过控制器添加timer按钮
         self.sort_btn = QPushButton('Sort')
         self.status_bar = QWidget()
         self.status_bar.setFixedHeight(self.config['ui']['status_bar_height'])
@@ -176,6 +177,11 @@ class MainWindow(QWidget):
             
     def mouseReleaseEvent(self, event):
         self.old_pos = None
+
+    def closeEvent(self, event):
+        """重写关闭事件，确保应用程序正确退出"""
+        QApplication.instance().quit()
+        event.accept()
 
     def show_toggle(self):
         """切换窗口的显示和隐藏状态"""
