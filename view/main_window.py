@@ -1,13 +1,36 @@
 from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QModelIndex
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QDesktopWidget, QShortcut, QApplication
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QKeyEvent
 from .list_view import TodoListView
+
+
+class AILineEdit(QLineEdit):
+    """支持 AI 解析的自定义 QLineEdit"""
+    ai_parse_requested = pyqtSignal(str)
+    
+    def keyPressEvent(self, event: QKeyEvent):
+        """重写键盘事件处理，支持 Shift+Enter"""
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            if event.modifiers() & Qt.ShiftModifier:
+                # Shift+Enter：触发 AI 解析
+                text = self.text()
+                if text:
+                    self.ai_parse_requested.emit(text)
+                    self.clear()
+                return  # 阻止事件继续传播
+            else:
+                # 普通 Enter：使用默认行为（会触发 returnPressed 信号）
+                super().keyPressEvent(event)
+        else:
+            # 其他键：使用默认行为
+            super().keyPressEvent(event)
 
 
 class MainWindow(QWidget):
     """应用程序的主视图"""
     # 定义信号，用于与控制器通信
     add_item_requested = pyqtSignal(str)
+    ai_parse_requested = pyqtSignal(str)  # 新增：AI 解析请求
     delete_item_requested = pyqtSignal(QModelIndex)
     toggle_item_requested = pyqtSignal(QModelIndex)  # 新增：切换项目完成状态
     sort_items_requested = pyqtSignal()
@@ -75,7 +98,7 @@ class MainWindow(QWidget):
 
     def _setup_widgets(self):
         """创建UI控件"""
-        self.input_lineedit = QLineEdit()
+        self.input_lineedit = AILineEdit()  # 使用自定义的 AILineEdit
         
         # 启用输入法支持，允许中文输入
         self.input_lineedit.setInputMethodHints(Qt.ImhNone)
@@ -105,6 +128,7 @@ class MainWindow(QWidget):
     def _connect_signals(self):
         """连接内部控件的信号到视图的主信号"""
         self.input_lineedit.returnPressed.connect(self._on_add_item)
+        self.input_lineedit.ai_parse_requested.connect(self._on_ai_parse_from_lineedit)  # 连接自定义信号
         self.load_btn.clicked.connect(self.load_requested)
         self.sort_btn.clicked.connect(self.sort_items_requested)
         
@@ -114,6 +138,17 @@ class MainWindow(QWidget):
         # 添加 Ctrl+W 退出快捷键
         quit_shortcut = QShortcut(QKeySequence("Ctrl+W"), self)
         quit_shortcut.activated.connect(self._quit_application)
+
+    def _on_ai_parse_from_lineedit(self, text: str):
+        """从自定义 QLineEdit 接收 AI 解析请求"""
+        self.ai_parse_requested.emit(text)
+
+    def _on_ai_parse(self):
+        """当 Shift+Enter 时，发射 AI 解析信号"""
+        text = self.input_lineedit.text()
+        if text:
+            self.ai_parse_requested.emit(text)
+            self.input_lineedit.clear()
 
     def _quit_application(self):
         """强制退出整个应用程序"""

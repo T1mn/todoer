@@ -3,6 +3,8 @@ from PyQt5.QtCore import QObject, QModelIndex, QDate
 from model.todo_model import TodoModel, TodoItem
 from view.main_window import MainWindow
 from utils.data_converter import DataConverter
+from utils.ai_service import GeminiService
+from utils.ai_converter import AIConverter
 
 class AppController(QObject):
     """应用程序的主控制器"""
@@ -10,11 +12,20 @@ class AppController(QObject):
         super().__init__(parent)
         self._model = model
         self._view = view
+        
+        # 初始化 AI 服务
+        try:
+            self._ai_service = GeminiService()
+        except Exception as e:
+            print(f"AI 服务初始化失败: {e}")
+            self._ai_service = None
+        
         self._connect_signals()
 
     def _connect_signals(self):
         """连接视图和模型的信号到控制器的槽函数"""
         self._view.add_item_requested.connect(self.add_item)
+        self._view.ai_parse_requested.connect(self.ai_parse_item)
         self._view.delete_item_requested.connect(self.delete_item)
         self._view.toggle_item_requested.connect(self.toggle_item)
         self._view.sort_items_requested.connect(self.sort_items)
@@ -45,6 +56,31 @@ class AppController(QObject):
         self._model.add_item(item)
         # 自动保存数据
         self._model.save()
+
+    def ai_parse_item(self, text: str):
+        """处理 AI 解析项目的请求"""
+        if not self._ai_service or not self._ai_service.is_available():
+            # AI 服务不可用，回退到普通解析
+            self.add_item(text)
+            return
+        
+        try:
+            # 使用 AI 服务解析文本
+            ai_result = self._ai_service.parse_todo_text(text)
+            
+            # 转换为 TodoItem
+            todo_item = AIConverter.convert_ai_to_todo_item(ai_result)
+            
+            # 添加到模型
+            self._model.add_item(todo_item)
+            
+            # 自动保存数据
+            self._model.save()
+            
+        except Exception as e:
+            print(f"AI 解析失败，回退到普通解析: {e}")
+            # 回退到普通解析
+            self.add_item(text)
 
     def delete_item(self, index: QModelIndex):
         """处理删除项目的请求"""
