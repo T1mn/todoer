@@ -183,3 +183,7 @@ class MainWindow(QWidget):
             self.hide()
         else:
             self.show() 
+
+    def get_list_view(self):
+        """获取列表视图对象，供控制器使用"""
+        return self.list_view 

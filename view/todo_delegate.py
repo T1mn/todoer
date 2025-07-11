@@ -39,12 +39,17 @@ class TodoDelegate(QStyledItemDelegate):
 
     def _paint_background(self, painter, option, item):
         """绘制背景，区分选中状态和分类颜色"""
+        rect = option.rect.adjusted(2, 1, -2, -1)  # 添加内边距创建圆角效果
+        
         if option.state & QStyle.State_Selected:
             # 选中时使用稍亮的灰色
-            painter.fillRect(option.rect, QColor("#555555"))
+            painter.setBrush(QColor("#555555"))
         else:
             # 未选中时使用与列表视图背景相同的颜色
-            painter.fillRect(option.rect, QColor("#2E2E2E"))
+            painter.setBrush(QColor("#2E2E2E"))
+        
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(rect, 4, 4)  # 绘制圆角矩形
 
     def _paint_checkbox(self, painter, option, item):
         """绘制复选框"""

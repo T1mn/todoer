@@ -130,12 +130,36 @@ class TodoModel(QAbstractListModel):
         self.endInsertRows()
 
     def delete_item(self, row: int):
-        """删除指定行的项目"""
-        if not 0 <= row < self.rowCount():
-            return
-        self.beginRemoveRows(QModelIndex(), row, row)
-        del self._items[row]
-        self.endRemoveRows()
+        """删除指定行的项目，增强错误处理"""
+        try:
+            # 严格的边界检查
+            if not isinstance(row, int) or row < 0 or row >= len(self._items):
+                print(f"警告：删除操作索引无效 - row: {row}, 总数: {len(self._items)}")
+                return False
+            
+            # 记录删除操作（用于调试）
+            item_to_delete = self._items[row]
+            print(f"正在删除项目: {item_to_delete.text} (索引: {row})")
+            
+            # 安全的删除操作
+            self.beginRemoveRows(QModelIndex(), row, row)
+            try:
+                del self._items[row]
+                success = True
+            except (IndexError, ValueError) as e:
+                print(f"删除项目时发生错误: {e}")
+                success = False
+            finally:
+                self.endRemoveRows()
+            
+            if success:
+                print(f"项目删除成功，剩余项目数: {len(self._items)}")
+            
+            return success
+            
+        except Exception as e:
+            print(f"删除操作异常: {e}")
+            return False
 
     def toggle_item_done(self, row: int):
         """切换指定行项目的完成状态"""

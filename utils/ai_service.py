@@ -62,28 +62,16 @@ class GeminiService:
 1. 提取核心任务文本（去除所有标识符和修饰词）
 2. 识别优先级关键词：紧急、急、重要、高优先级 -> urgent；重要、高 -> high；普通、中等 -> medium；不急、低 -> low
 3. 识别类别关键词：工作、项目、会议、报告 -> work；生活、购物、家务 -> life；学习、读书、课程 -> study
-4. 识别时间信息：今天、明天、后天、具体日期、下周等
-5. 识别预估时间：需要多长时间完成
+4. 识别时间信息：今天、明天、后天、具体日期、下周等，转换为具体的 YYYY-MM-DD 格式
+5. 识别预估时间：如果提到需要多长时间完成，提取分钟数
 6. 提取其他备注信息
 
 今天的日期是：{date.today().strftime('%Y-%m-%d')}
-
-请严格按照以下 JSON 格式返回：
-{{
-    "text": "清理后的任务文本",
-    "priority": "low|medium|high|urgent",
-    "category": "default|work|life|study",
-    "deadline": "YYYY-MM-DD 或 null",
-    "estimated_time": 数字或null,
-    "notes": "备注信息或null"
-}}
-
-只返回 JSON，不要其他内容。
 """
         
         try:
             response = self.client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-flash-lite-preview-06-17",
                 contents=prompt,
                 config={
                     "response_mime_type": "application/json",
@@ -91,20 +79,13 @@ class GeminiService:
                 }
             )
             
-            # 直接使用解析后的对象
+            # 优先使用解析后的对象
             if hasattr(response, 'parsed') and response.parsed:
                 return response.parsed
             else:
-                # 如果没有解析结果，尝试手动解析
-                response_text = response.text.strip()
-                if response_text.startswith('```json'):
-                    response_text = response_text[7:]
-                if response_text.endswith('```'):
-                    response_text = response_text[:-3]
-                response_text = response_text.strip()
-                
-                result_data = json.loads(response_text)
-                return TodoItemAI(**result_data)
+                # 如果没有解析结果，回退到基本解析
+                print("AI 响应解析失败，使用基本解析")
+                return self._basic_parse(user_input)
             
         except Exception as e:
             print(f"AI 解析错误: {e}")

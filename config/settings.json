@@ -3,7 +3,7 @@
         "opacity": 0.9,
         "window_width": 300,
         "window_height": 400,
-        "status_bar_height": 5,
+        "status_bar_height": 20,
         "font_family": "Arial",
         "font_size": 10
     },
