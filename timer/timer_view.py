@@ -3,6 +3,15 @@ from PyQt5.QtWidgets import (QPushButton, QDialog, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QFont, QKeyEvent
 
+# 导入日志管理器  
+try:
+    from utils.logger import module_logger
+    def log_view(action: str, details: str):
+        module_logger.log_view_action(action, details)
+except ImportError:
+    def log_view(action: str, details: str):
+        print(f"[TIMER-VIEW-{action}] {details}")
+
 class TimerButton(QPushButton):
     """主界面的计时器按钮"""
     
@@ -153,7 +162,7 @@ class TimerDialog(QDialog):
         
         self.start_btn = QPushButton("开始")
         self.start_btn.setObjectName("startButton")
-        self.start_btn.clicked.connect(self.start_requested.emit)
+        self.start_btn.clicked.connect(self._on_start_clicked)  # 修改为自定义方法
         
         self.pause_btn = QPushButton("暂停")
         self.pause_btn.setObjectName("pauseButton")
@@ -184,6 +193,12 @@ class TimerDialog(QDialog):
     def _hide_dialog(self):
         """隐藏对话框而不是关闭"""
         self.hide()
+
+    def _on_start_clicked(self):
+        """处理开始按钮点击：启动计时器并隐藏对话框进入专注模式"""
+        self.start_requested.emit()  # 发送启动信号
+        log_view("timer_start_and_hide", "计时器启动并进入专注模式（对话框已隐藏）")
+        self.hide()  # 立即隐藏对话框，进入专注执行模式
     
     def _set_preset_time(self, minutes: int):
         """设置预设时间"""
@@ -232,7 +247,7 @@ class TimerDialog(QDialog):
             if self.current_status == "running":
                 self.pause_requested.emit()
             elif self.current_status in ["stopped", "paused"]:
-                self.start_requested.emit()
+                self._on_start_clicked()  # 使用自定义方法，确保自动隐藏
         else:
             super().keyPressEvent(event)
     

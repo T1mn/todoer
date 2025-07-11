@@ -22,5 +22,13 @@
     "duration_seconds": 484,
     "event_type": "pomodoro",
     "category": "work"
+  },
+  {
+    "event_description": "查询todoer记录文件位置",
+    "start_time": "2025-07-11T17:19:21.002554",
+    "end_time": "2025-07-11T17:34:47.661682",
+    "duration_seconds": 926,
+    "event_type": "pomodoro",
+    "category": "work"
   }
 ]
