@@ -154,7 +154,10 @@ class MainWindow(QWidget):
     def _quit_application(self):
         """强制退出整个应用程序"""
         self.close()  # 先关闭窗口
-        QApplication.instance().quit()  # 然后退出应用
+        # 添加类型守卫，消除Linter误报
+        app = QApplication.instance()
+        if app:
+            app.quit()  # 现在Linter知道app不是None
 
     def _on_add_item(self):
         """当输入框回车时，发射添加信号并清空输入"""
@@ -180,7 +183,10 @@ class MainWindow(QWidget):
 
     def closeEvent(self, event):
         """重写关闭事件，确保应用程序正确退出"""
-        QApplication.instance().quit()
+        # 添加类型守卫，消除Linter误报
+        app = QApplication.instance()
+        if app:
+            app.quit()
         event.accept()
 
     def show_toggle(self):
