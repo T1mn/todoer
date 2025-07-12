@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QPushButton, QDialog, QVBoxLayout, QHBoxLayout, 
                              QLabel, QSpinBox, QGridLayout, QFrame)
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal, Qt, QPoint
 from PyQt5.QtGui import QFont, QKeyEvent
 
 # 导入日志管理器  
@@ -99,15 +99,19 @@ class TimerDialog(QDialog):
     
     def _setup_ui(self):
         """设置用户界面"""
-        self.setWindowTitle("番茄时间设置")
-        self.setFixedSize(300, 280)  # 增加高度
+        # 1. 设置为无边框窗口，让Qt完全接管绘制
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        
+        # 保持旧的 setWindowTitle，它可能对某些辅助技术有用
+        self.setWindowTitle("番茄时间设置") 
+        self.setFixedSize(300, 500)
         self.setModal(True)
         
         layout = QVBoxLayout()
         layout.setSpacing(10)
         layout.setContentsMargins(15, 15, 15, 15)
         
-        # 标题
+        # 这个 QLabel 现在将作为我们的自定义标题栏
         title_label = QLabel("🍅 番茄时间")
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setObjectName("title")
@@ -189,7 +193,24 @@ class TimerDialog(QDialog):
         layout.addLayout(hide_layout)
         
         self.setLayout(layout)
-    
+
+    # 2. 添加鼠标事件，使无边框窗口可以被拖动
+    def mousePressEvent(self, event):
+        """处理鼠标按下事件，用于窗口移动"""
+        if event.button() == Qt.LeftButton:  # type: ignore
+            self.old_pos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        """处理鼠标移动事件，用于窗口移动"""
+        if hasattr(self, 'old_pos') and self.old_pos is not None:
+            delta = QPoint(event.globalPos() - self.old_pos)
+            self.move(self.x() + delta.x(), self.y() + delta.y())
+            self.old_pos = event.globalPos()
+            
+    def mouseReleaseEvent(self, event):
+        """处理鼠标释放事件"""
+        self.old_pos = None
+
     def _hide_dialog(self):
         """隐藏对话框而不是关闭"""
         self.hide()

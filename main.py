@@ -3,6 +3,7 @@ import json
 import os
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QStandardPaths, qInstallMessageHandler, QtMsgType
+from PyQt5.QtGui import QFontDatabase, QFont
 from PyQt5.Qt import Qt
 
 from model.todo_model import TodoModel
@@ -67,6 +68,22 @@ def main():
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
         
         app = QApplication(sys.argv)
+
+        # ------------------- 字体加载与设置（核心修改） -------------------
+        font_path = os.path.join(os.path.dirname(__file__), 'resources', 'WenQuanYi Micro Hei.ttf')
+        font_id = QFontDatabase.addApplicationFont(font_path)
+        
+        if font_id != -1:
+            font_families = QFontDatabase.applicationFontFamilies(font_id)
+            if font_families:
+                app_font = QFont(font_families[0], 10) # 使用加载的字体族，10为默认字号
+                app.setFont(app_font)
+                print(f"全局字体已成功设置为: {font_families[0]}") # 添加成功日志
+            else:
+                print("警告：字体已加载但无法获取字体族名称，将使用系统默认字体。")
+        else:
+            print(f"警告：字体文件加载失败，路径: {font_path}，将使用系统默认字体。")
+        # -----------------------------------------------------------------
 
         # 修改退出策略：只有在明确请求时才退出，避免因对话框关闭导致意外退出
         app.setQuitOnLastWindowClosed(False)

@@ -55,7 +55,7 @@ class MainWindow(QWidget):
         self.setWindowOpacity(ui_cfg['opacity'])
         self.setWindowTitle('To-Do List')
         self.setGeometry(0, 0, ui_cfg['window_width'], ui_cfg['window_height'])
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self._center_on_secondary_screen()
         self._apply_stylesheet()
 
