@@ -70,18 +70,18 @@ class TodoListView(QListView):
 
             # 添加查看详细信息选项
             info_action = QAction("📋 查看详细信息", self)
-            info_action.triggered.connect(lambda checked, idx=index: self.show_info_requested.emit(idx))
+            info_action.triggered.connect(lambda idx=index: self.show_info_requested.emit(idx))
             menu.addAction(info_action)
 
             menu.addSeparator()
 
             # 添加删除选项
             delete_action = QAction("🗑️ 删除项目", self)
-            delete_action.triggered.connect(lambda checked, idx=index: self.delete_item_requested.emit(idx))
+            delete_action.triggered.connect(lambda idx=index: self.delete_item_requested.emit(idx))
             menu.addAction(delete_action)
 
             # 安全地显示菜单
-            menu.exec(event.globalPosition().toPoint())
+            menu.exec(event.globalPos())
             
         except Exception as e:
             print(f"右键菜单处理错误: {e}")

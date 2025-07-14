@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QPushButton, QDialog, QVBoxLayout, QHBoxLayout, 
                              QLabel, QSpinBox, QGridLayout, QFrame)
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QFont, QKeyEvent
+from PySide6.QtCore import Signal, Qt, QPoint
+from PySide6.QtGui import QKeyEvent
 
 # 导入日志管理器  
 try:

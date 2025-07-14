@@ -169,14 +169,14 @@ class MainWindow(QWidget):
     def mousePressEvent(self, event):
         """处理鼠标按下事件，用于窗口移动"""
         if event.button() == Qt.LeftButton:
-            self.old_pos = event.globalPosition().toPoint()
+            self.old_pos = event.globalPos()
 
     def mouseMoveEvent(self, event):
         """处理鼠标移动事件，用于窗口移动"""
         if hasattr(self, 'old_pos') and self.old_pos is not None:
-            delta = QPoint(event.globalPosition().toPoint() - self.old_pos)
+            delta = QPoint(event.globalPos() - self.old_pos)
             self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.old_pos = event.globalPosition().toPoint()
+            self.old_pos = event.globalPos()
             
     def mouseReleaseEvent(self, event):
         self.old_pos = None
