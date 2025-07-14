@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QListView, QMenu, QAction
-from PyQt5.QtCore import pyqtSignal, QModelIndex, Qt
-from PyQt5.QtGui import QMouseEvent, QKeyEvent
+from PySide6.QtWidgets import QListView, QMenu
+from PySide6.QtCore import Signal, QModelIndex, Qt
+from PySide6.QtGui import QMouseEvent, QKeyEvent, QAction
 
 
 class TodoListView(QListView):
@@ -10,10 +10,10 @@ class TodoListView(QListView):
     """
     
     # 定义信号：当项目被双击时发射
-    item_double_clicked = pyqtSignal(QModelIndex)
+    item_double_clicked = Signal(QModelIndex)
     # 新增信号：右键菜单操作
-    delete_item_requested = pyqtSignal(QModelIndex)
-    show_info_requested = pyqtSignal(QModelIndex)
+    delete_item_requested = Signal(QModelIndex)
+    show_info_requested = Signal(QModelIndex)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -81,7 +81,7 @@ class TodoListView(QListView):
             menu.addAction(delete_action)
 
             # 安全地显示菜单
-            menu.exec_(event.globalPos())
+            menu.exec(event.globalPosition().toPoint())
             
         except Exception as e:
             print(f"右键菜单处理错误: {e}")
@@ -89,7 +89,7 @@ class TodoListView(QListView):
     def keyPressEvent(self, event: QKeyEvent):
         """处理键盘事件，支持Delete键删除，增强错误处理"""
         try:
-            if event.key() == Qt.Key_Delete:
+            if event.key() == Qt.Key.Key_Delete:
                 current_index = self.currentIndex()
                 if current_index.isValid() and current_index.model():
                     # 确保索引有效后再发射信号

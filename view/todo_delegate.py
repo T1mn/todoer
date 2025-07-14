@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QApplication, QStyleOptionButton
-from PyQt5.QtCore import Qt, QModelIndex, QPoint, QDate, QSize, QRect
-from PyQt5.QtGui import QColor, QFont, QPen
+from PySide6.QtWidgets import QStyledItemDelegate, QStyle, QApplication, QStyleOptionButton
+from PySide6.QtCore import Qt, QModelIndex, QPoint, QDate, QSize, QRect
+from PySide6.QtGui import QColor, QFont, QPen
 
 class TodoDelegate(QStyledItemDelegate):
     """自定义待办事项的渲染代理"""

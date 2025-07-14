@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QObject, QModelIndex, QDate, Qt, QTimer
-from PyQt5.QtWidgets import QMessageBox
+from PySide6.QtCore import QObject, QModelIndex, QDate, Qt, QTimer
+from PySide6.QtWidgets import QMessageBox
 
 from model.todo_model import TodoModel, TodoItem
 from view.main_window import MainWindow

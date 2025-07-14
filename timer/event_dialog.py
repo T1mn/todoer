@@ -1,13 +1,13 @@
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                              QTextEdit, QComboBox, QPushButton, QFrame)
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtGui import QKeyEvent
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QKeyEvent
 
 class EventDialog(QDialog):
     """事件记录对话框"""
     
     # 信号定义
-    event_recorded = pyqtSignal(str, str)  # (事件描述, 类别)
+    event_recorded = Signal(str, str)  # (事件描述, 类别)
     
     def __init__(self, duration_minutes: int = 0, parent=None):
         super().__init__(parent)
@@ -118,9 +118,9 @@ class EventDialog(QDialog):
     
     def keyPressEvent(self, event: QKeyEvent):
         """处理键盘事件"""
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.reject()
-        elif event.modifiers() & Qt.ControlModifier and event.key() == Qt.Key_Return:
+        elif event.modifiers() & Qt.KeyboardModifier.ControlModifier and event.key() == Qt.Key.Key_Return:
             # Ctrl+Enter 快速提交
             self._save_record()
         else:

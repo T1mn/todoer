@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from PyQt5.QtCore import QAbstractListModel, QModelIndex, Qt, QDate
+from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt, QDate
 from dataclasses import dataclass, field, asdict
 
 class Priority(Enum):

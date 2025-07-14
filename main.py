@@ -1,10 +1,10 @@
 import sys
 import json
 import os
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QStandardPaths, qInstallMessageHandler, QtMsgType
-from PyQt5.QtGui import QFontDatabase, QFont
-from PyQt5.Qt import Qt
+from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QStandardPaths, qInstallMessageHandler, QtMsgType
+from PySide6.QtGui import QFontDatabase, QFont
+from PySide6.QtCore import Qt
 
 from model.todo_model import TodoModel
 from view.main_window import MainWindow
@@ -63,9 +63,6 @@ def main():
         # 安装自定义消息处理器
         qInstallMessageHandler(qt_message_handler)
         
-        # 在创建 QApplication 之前设置属性
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
         
         app = QApplication(sys.argv)
 
@@ -117,7 +114,7 @@ def main():
         view.show()
 
         # 运行应用程序
-        exit_code = app.exec_()
+        exit_code = app.exec()
         
         # 退出前保存数据
         try:

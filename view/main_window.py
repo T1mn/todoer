@@ -1,17 +1,17 @@
-from PyQt5.QtCore import Qt, pyqtSignal, QPoint, QModelIndex
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QDesktopWidget, QShortcut, QApplication
-from PyQt5.QtGui import QKeySequence, QKeyEvent
+from PySide6.QtCore import Qt, Signal, QPoint, QModelIndex
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QApplication
+from PySide6.QtGui import QKeySequence, QKeyEvent, QShortcut
 from .list_view import TodoListView
 
 
 class AILineEdit(QLineEdit):
     """支持 AI 解析的自定义 QLineEdit"""
-    ai_parse_requested = pyqtSignal(str)
+    ai_parse_requested = Signal(str)
     
     def keyPressEvent(self, event: QKeyEvent):
         """重写键盘事件处理，支持 Shift+Enter"""
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            if event.modifiers() & Qt.ShiftModifier:
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+            if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
                 # Shift+Enter：触发 AI 解析
                 text = self.text()
                 if text:
@@ -29,13 +29,13 @@ class AILineEdit(QLineEdit):
 class MainWindow(QWidget):
     """应用程序的主视图"""
     # 定义信号，用于与控制器通信
-    add_item_requested = pyqtSignal(str)
-    ai_parse_requested = pyqtSignal(str)  # 新增：AI 解析请求
-    delete_item_requested = pyqtSignal(QModelIndex)
-    toggle_item_requested = pyqtSignal(QModelIndex)  # 新增：切换项目完成状态
-    sort_items_requested = pyqtSignal()
-    save_requested = pyqtSignal()
-    load_requested = pyqtSignal()
+    add_item_requested = Signal(str)
+    ai_parse_requested = Signal(str)  # 新增：AI 解析请求
+    delete_item_requested = Signal(QModelIndex)
+    toggle_item_requested = Signal(QModelIndex)  # 新增：切换项目完成状态
+    sort_items_requested = Signal()
+    save_requested = Signal()
+    load_requested = Signal()
     
     def __init__(self, config: dict, parent=None):
         super().__init__(parent)
@@ -88,10 +88,10 @@ class MainWindow(QWidget):
 
     def _center_on_secondary_screen(self):
         """将窗口移动到副显示器的右下角"""
-        screen_count = QDesktopWidget().screenCount()
-        primary_screen = QDesktopWidget().screenGeometry(0)
+        screens = QApplication.screens()
+        primary_screen = screens[0].geometry()
         
-        target_screen = QDesktopWidget().availableGeometry(1) if screen_count > 1 else primary_screen
+        target_screen = screens[1].availableGeometry() if len(screens) > 1 else primary_screen
         
         self.move(target_screen.right() - self.width(), target_screen.bottom() - self.height())
 
@@ -169,14 +169,14 @@ class MainWindow(QWidget):
     def mousePressEvent(self, event):
         """处理鼠标按下事件，用于窗口移动"""
         if event.button() == Qt.LeftButton:
-            self.old_pos = event.globalPos()
+            self.old_pos = event.globalPosition().toPoint()
 
     def mouseMoveEvent(self, event):
         """处理鼠标移动事件，用于窗口移动"""
         if hasattr(self, 'old_pos') and self.old_pos is not None:
-            delta = QPoint(event.globalPos() - self.old_pos)
+            delta = QPoint(event.globalPosition().toPoint() - self.old_pos)
             self.move(self.x() + delta.x(), self.y() + delta.y())
-            self.old_pos = event.globalPos()
+            self.old_pos = event.globalPosition().toPoint()
             
     def mouseReleaseEvent(self, event):
         self.old_pos = None

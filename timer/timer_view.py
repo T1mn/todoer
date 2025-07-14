@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import (QPushButton, QDialog, QVBoxLayout, QHBoxLayout, 
+from PySide6.QtWidgets import (QPushButton, QDialog, QVBoxLayout, QHBoxLayout, 
                              QLabel, QSpinBox, QGridLayout, QFrame)
-from PyQt5.QtCore import pyqtSignal, Qt, QPoint
-from PyQt5.QtGui import QFont, QKeyEvent
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QFont, QKeyEvent
 
 # 导入日志管理器  
 try:
@@ -15,7 +15,7 @@ except ImportError:
 class TimerButton(QPushButton):
     """主界面的计时器按钮"""
     
-    timer_clicked = pyqtSignal()
+    timer_clicked = Signal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -84,10 +84,10 @@ class TimerDialog(QDialog):
     """计时器设置和控制对话框"""
     
     # 信号定义
-    time_set_requested = pyqtSignal(int)
-    start_requested = pyqtSignal()
-    pause_requested = pyqtSignal()
-    stop_requested = pyqtSignal()
+    time_set_requested = Signal(int)
+    start_requested = Signal()
+    pause_requested = Signal()
+    stop_requested = Signal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -262,9 +262,9 @@ class TimerDialog(QDialog):
     
     def keyPressEvent(self, event: QKeyEvent):
         """处理键盘事件"""
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self._hide_dialog()  # 修改为隐藏而不是关闭
-        elif event.key() == Qt.Key_Space:
+        elif event.key() == Qt.Key.Key_Space:
             if self.current_status == "running":
                 self.pause_requested.emit()
             elif self.current_status in ["stopped", "paused"]:

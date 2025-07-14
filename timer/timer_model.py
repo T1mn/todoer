@@ -1,8 +1,8 @@
 import json
 import os
 from enum import Enum
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtCore import QObject, Signal, QTimer
+from PySide6.QtWidgets import QApplication
 from .event_model import EventModel
 
 # 导入日志管理器  
@@ -26,10 +26,10 @@ class TimerModel(QObject):
     """番茄时间计时器模型"""
     
     # 信号定义
-    time_updated = pyqtSignal(int)           # 时间更新信号(剩余秒数)
-    timer_finished = pyqtSignal()            # 计时完成信号
-    status_changed = pyqtSignal(str)         # 状态变化信号
-    event_record_requested = pyqtSignal(int) # 请求记录事件信号(持续分钟数)
+    time_updated = Signal(int)           # 时间更新信号(剩余秒数)
+    timer_finished = Signal()            # 计时完成信号
+    status_changed = Signal(str)         # 状态变化信号
+    event_record_requested = Signal(int) # 请求记录事件信号(持续分钟数)
     
     def __init__(self, config_file="timer_settings.json"):
         super().__init__()

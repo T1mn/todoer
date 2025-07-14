@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QFrame)
-from PyQt5.QtCore import Qt, QDate
-from PyQt5.QtGui import QKeyEvent
+from PySide6.QtCore import Qt, QDate
+from PySide6.QtGui import QKeyEvent
 from model.todo_model import TodoItem, Priority
 
 
@@ -112,7 +112,7 @@ class InfoDialog(QDialog):
 
     def keyPressEvent(self, event: QKeyEvent):
         """处理键盘事件，支持Esc键退出"""
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.accept()
         else:
             super().keyPressEvent(event)
