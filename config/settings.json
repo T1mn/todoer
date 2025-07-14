@@ -30,6 +30,10 @@
     "data": {
         "storage_file": ".todo.json"
     },
+    "data_storage": {
+        "todo_file": "data/todo_events.json",
+        "event_file": "config/event_records.json"
+    },
     "logic": {
         "countdown_minutes": 25
     },

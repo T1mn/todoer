@@ -2,12 +2,16 @@ from PySide6.QtCore import QObject, QModelIndex, QDate, Qt, QTimer
 from PySide6.QtWidgets import QMessageBox
 
 from model.todo_model import TodoModel, TodoItem
-from view.main_window import MainWindow
-from view.info_dialog import InfoDialog
-from timer.timer_controller import TimerController
+from model.event_model import EventModel
+from view.windows.main_window import MainWindow
+from view.dialogs.info_dialog import InfoDialog
+from controller.timer_controller import TimerController
 from utils.data_converter import DataConverter
 from utils.ai_service import GeminiService
 from utils.ai_converter import AIConverter
+from .ai_parse_handler import AIParseHandler
+from .cloud_sync_handler import CloudSyncHandler
+from .dialog_manager import DialogManager
 
 class AppController(QObject):
     """应用程序的主控制器"""
@@ -34,49 +38,33 @@ class AppController(QObject):
             print(f"AI 服务初始化失败: {e}")
             self._ai_service = None
         
+        self._ai_parse_handler = AIParseHandler(self._model, self._ai_service)
+        self._cloud_sync_handler = CloudSyncHandler(self._model)
+        self._dialog_manager = DialogManager(self._view)
         self._connect_signals()
 
     def _integrate_timer_button(self):
         """将Timer按钮集成到主界面布局"""
         try:
-            # 获取Timer按钮
             timer_button = self._timer_controller.get_timer_button()
-            
-            # 获取主界面的按钮布局
-            main_layout = self._view.main_layout
-            
-            # 找到按钮布局（应该是第3个项目：status_bar, input, btn_layout, list_view）
-            for i in range(main_layout.count()):
-                item = main_layout.itemAt(i)
-                if item and hasattr(item, 'layout') and item.layout():
-                    btn_layout = item.layout()
-                    # 检查是否是按钮布局（包含Load和Sort按钮）
-                    if (btn_layout.count() >= 2 and 
-                        hasattr(btn_layout.itemAt(0), 'widget') and
-                        hasattr(btn_layout.itemAt(1), 'widget')):
-                        
-                        load_widget = btn_layout.itemAt(0).widget()
-                        sort_widget = btn_layout.itemAt(1).widget()
-                        
-                        if (hasattr(load_widget, 'text') and load_widget.text() == 'Load' and
-                            hasattr(sort_widget, 'text') and sort_widget.text() == 'Sort'):
-                            # 找到了正确的按钮布局，在中间插入Timer按钮
-                            btn_layout.insertWidget(1, timer_button)
-                            print("✅ Timer按钮已成功集成到主界面")
-                            break
-                    
+            self._view.add_widget_to_button_layout(timer_button, 1)
+            print("✅ Timer按钮已成功集成到主界面")
         except Exception as e:
             print(f"集成Timer按钮失败: {e}")
 
     def _connect_signals(self):
         """连接视图和模型的信号到控制器的槽函数"""
         self._view.add_item_requested.connect(self.add_item)
-        self._view.ai_parse_requested.connect(self.ai_parse_item)
+        self._view.ai_parse_requested.connect(self._ai_parse_handler.parse_item)
         self._view.delete_item_requested.connect(self.delete_item)
         self._view.toggle_item_requested.connect(self.toggle_item)
         self._view.sort_items_requested.connect(self.sort_items)
         self._view.save_requested.connect(self._model.save)
         self._view.load_requested.connect(self._model.load)
+        
+        # 连接云同步信号
+        self._view.upload_requested.connect(self._cloud_sync_handler.handle_upload_request)
+        self._view.download_requested.connect(self._cloud_sync_handler.handle_download_request)
         
         # 连接列表视图的新信号
         try:
@@ -85,6 +73,8 @@ class AppController(QObject):
             list_view.show_info_requested.connect(self.show_item_info)
         except Exception as e:
             print(f"警告：信号连接失败: {e}")
+
+    
 
     def _delayed_save(self):
         """延迟保存数据，避免在模型更新期间立即保存"""
@@ -125,30 +115,7 @@ class AppController(QObject):
         except Exception as e:
             print(f"添加项目时出错: {e}")
 
-    def ai_parse_item(self, text: str):
-        """处理 AI 解析项目的请求"""
-        if not self._ai_service or not self._ai_service.is_available():
-            # AI 服务不可用，回退到普通解析
-            self.add_item(text)
-            return
-        
-        try:
-            # 使用 AI 服务解析文本
-            ai_result = self._ai_service.parse_todo_text(text)
-            
-            # 转换为 TodoItem
-            todo_item = AIConverter.convert_ai_to_todo_item(ai_result)
-            
-            # 添加到模型
-            self._model.add_item(todo_item)
-            
-            # 使用延迟保存
-            self._schedule_save()
-            
-        except Exception as e:
-            print(f"AI 解析失败，回退到普通解析: {e}")
-            # 回退到普通解析
-            self.add_item(text)
+    
 
     def delete_item(self, index: QModelIndex):
         """处理删除项目的请求（内部方法，不带确认）"""
@@ -166,12 +133,18 @@ class AppController(QObject):
 
     def confirm_delete_item(self, index: QModelIndex):
         """确认删除项目（带确认对话框）"""
+        print(f"🗑️ [删除调试] 收到删除请求，索引: {index.row() if index.isValid() else 'INVALID'}")
+        
         if not index.isValid():
+            print("❌ [删除调试] 索引无效，退出删除操作")
             return
             
         try:
             item = index.data(Qt.UserRole)
+            print(f"📋 [删除调试] 获取项目数据: {item.text if item else 'None'}")
+            
             if not item:
+                print("❌ [删除调试] 无法获取项目数据，退出删除操作")
                 return
                 
             # 创建确认对话框
@@ -183,48 +156,28 @@ class AppController(QObject):
             msg_box.setDefaultButton(QMessageBox.No)
             
             # 应用圆角样式
-            msg_box.setStyleSheet("""
-                QMessageBox {
-                    background-color: #2E2E2E;
-                    color: #E0E0E0;
-                }
-                QMessageBox QPushButton {
-                    background-color: #4A4A4A;
-                    color: #E0E0E0;
-                    border: none;
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    min-width: 60px;
-                }
-                QMessageBox QPushButton:hover {
-                    background-color: #555555;
-                }
-            """)
+            # msg_box.setStyleSheet("""...""") # Style is now handled globally
             
+            print("💬 [删除调试] 显示确认对话框...")
             # 使用异步方式处理确认结果，避免阻塞
             result = msg_box.exec_()
+            print(f"✅ [删除调试] 用户选择: {'是' if result == QMessageBox.Yes else '否'}")
+            
             if result == QMessageBox.Yes:
                 # 延迟执行删除操作，让确认对话框完全关闭
+                print("🗑️ [删除调试] 执行删除操作...")
                 QTimer.singleShot(50, lambda: self.delete_item(index))
                 
         except Exception as e:
-            print(f"确认删除时出错: {e}")
+            print(f"❌ [删除调试] 确认删除时出错: {e}")
 
     def show_item_info(self, index: QModelIndex):
-        """显示项目详细信息"""
         if not index.isValid():
             return
-            
-        try:
-            item = index.data(Qt.UserRole)
-            if not item:
-                return
-                
-            # 创建并显示信息对话框
-            dialog = InfoDialog(item, self._view)
-            dialog.exec_()
-        except Exception as e:
-            print(f"显示项目信息时出错: {e}")
+        item = index.data(Qt.UserRole)
+        if not item:
+            return
+        self._dialog_manager.show_item_info(item)
 
     def toggle_item(self, index: QModelIndex):
         """处理切换项目完成状态的请求"""

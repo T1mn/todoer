@@ -7,8 +7,8 @@ from PySide6.QtGui import QFontDatabase, QFont
 from PySide6.QtCore import Qt
 
 from model.todo_model import TodoModel
-from view.main_window import MainWindow
-from view.todo_delegate import TodoDelegate
+from view.windows.main_window import MainWindow
+from view.delegates.todo_delegate import TodoDelegate
 from controller.app_controller import AppController
 
 def qt_message_handler(mode, context, message):
@@ -67,7 +67,7 @@ def main():
         app = QApplication(sys.argv)
 
         # ------------------- 字体加载与设置（核心修改） -------------------
-        font_path = os.path.join(os.path.dirname(__file__), 'resources', 'WenQuanYi Micro Hei.ttf')
+        font_path = os.path.join(os.path.dirname(__file__), 'view', 'assets', 'fonts', 'WenQuanYi Micro Hei.ttf')
         font_id = QFontDatabase.addApplicationFont(font_path)
         
         if font_id != -1:
@@ -96,7 +96,9 @@ def main():
         os.makedirs(docs_path, exist_ok=True)
 
         # 3. 初始化MVC组件
-        model = TodoModel(file_path)
+        KEY_PATH = "config/brilliant-balm-465903-g3-e308e8638139.json"
+        USER_ID = "default_user"  # 可根据实际需求动态生成
+        model = TodoModel(USER_ID, KEY_PATH)
         view = MainWindow(config)
         delegate = TodoDelegate(config)
         controller = AppController(model, view)
@@ -116,12 +118,6 @@ def main():
         # 运行应用程序
         exit_code = app.exec()
         
-        # 退出前保存数据
-        try:
-            model.save()
-        except Exception as e:
-            print(f"警告：退出时保存数据失败 ({e})")
-            
         sys.exit(exit_code)
         
     except Exception as e:
