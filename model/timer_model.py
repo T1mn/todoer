@@ -126,3 +126,11 @@ class TimerModel(QObject):
         if self.status == TimerStatus.FINISHED:
             return "✅ 完成"
         return f"Timer {self.total_seconds // 60}m"
+
+    def reset_timer(self):
+        """重置计时器到初始状态"""
+        self.status = TimerStatus.STOPPED
+        self.remaining_seconds = self.total_seconds
+        self._qtimer.stop()
+        self.time_updated.emit(self.remaining_seconds)
+        self.status_changed.emit(self.status.value)

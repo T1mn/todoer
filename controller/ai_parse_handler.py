@@ -25,5 +25,5 @@ class AIParseHandler:
         from utils.data_converter import DataConverter
         deadline, clean_text = DataConverter.convert_text_to_date(text)
         priority, clean_text = DataConverter.convert_text_to_priority(clean_text)
-        item = TodoItem(text=clean_text, deadline=deadline, priority=priority)
+        item = TodoItem(description=clean_text, deadline=deadline, priority=priority)
         self._model.add_item(item)

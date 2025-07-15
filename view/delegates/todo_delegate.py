@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QStyledItemDelegate, QStyle, QApplication, QStyleOptionButton
 from PySide6.QtCore import Qt, QModelIndex, QPoint, QDate, QSize, QRect
 from PySide6.QtGui import QColor, QFont, QPen
+from contextlib import contextmanager
 
 class TodoDelegate(QStyledItemDelegate):
     """自定义待办事项的渲染代理"""
@@ -19,23 +20,27 @@ class TodoDelegate(QStyledItemDelegate):
             return
 
         painter.save()
-        
-        # 绘制背景
-        self._paint_background(painter, option, item)
-        
-        # 移除复选框绘制，不再需要
-        # self._paint_checkbox(painter, option, item)
+        try:
+            # 绘制背景
+            self._paint_background(painter, option, item)
+            
+            # 移除复选框绘制，不再需要
+            # self._paint_checkbox(painter, option, item)
 
-        # 绘制优先级指示器
-        self._paint_priority(painter, option, item)
+            # 绘制优先级指示器
+            self._paint_priority(painter, option, item)
 
-        # 绘制文本
-        self._paint_text(painter, option, item)
+            # 绘制文本
+            self._paint_text(painter, option, item)
 
-        # 绘制截止日期标签
-        self._paint_deadline(painter, option, item)
+            # 绘制截止日期标签
+            self._paint_deadline(painter, option, item)
 
-        painter.restore()
+            painter.restore()
+        except Exception:
+            # 确保在异常情况下也能恢复状态
+            painter.restore()  # ❌ 问题所在：这里会再次调用restore！
+            raise
 
     def _paint_background(self, painter, option, item):
         """绘制背景，区分选中状态和分类颜色"""

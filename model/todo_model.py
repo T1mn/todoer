@@ -1,7 +1,19 @@
+"""
+待办事项数据模型模块
+
+定义待办事项的数据结构和管理逻辑，继承自BaseItem，
+严格遵循数据与视图分离的原则。
+"""
+
 import json
+from datetime import datetime
 from enum import Enum
+from typing import Dict, Any
+
 from PySide6.QtCore import QModelIndex, Qt, QDate
 from dataclasses import dataclass, field, asdict
+
+from .base_item import BaseItem
 from .base_model import BaseModel
 
 
@@ -13,11 +25,22 @@ class Priority(Enum):
     HIGH = 3
     URGENT = 4
 
-    def __str__(self):
+    @property
+    def display_name(self) -> str:
+        """获取显示名称"""
+        display_map = {
+            Priority.LOW: "低",
+            Priority.MEDIUM: "中等", 
+            Priority.HIGH: "高",
+            Priority.URGENT: "紧急"
+        }
+        return display_map.get(self, "中等")
+
+    def __str__(self) -> str:
         return self.name.lower()
 
     @classmethod
-    def from_string(cls, value: str):
+    def from_string(cls, value: str) -> 'Priority':
         """从字符串创建Priority对象"""
         try:
             return cls[value.upper()]
@@ -25,26 +48,102 @@ class Priority(Enum):
             return cls.MEDIUM
 
 @dataclass
-class TodoItem:
-    """待办事项的数据类"""
-    text: str
+class TodoItem(BaseItem):
+    """待办事项数据类
+    
+    继承自BaseItem，包含待办事项特有的属性和逻辑。
+    严格遵循数据模型职责，不包含任何界面显示逻辑。
+    
+    Attributes:
+        done: 完成状态
+        priority: 优先级
+        deadline: 截止日期
+        donetime: 完成时间
+        consume_time: 预估消耗时间（分钟）
+    """
     done: bool = False
-    category: str = "default"
     priority: Priority = Priority.MEDIUM
     deadline: QDate = None
-    createtime: QDate = field(default_factory=QDate.currentDate)
     donetime: QDate = None
     consume_time: int = 0
 
-    def __post_init__(self):
-        """数据验证和处理"""
+    def __post_init__(self) -> None:
+        """初始化后处理，设置类型标识和数据验证"""
+        self.item_type = "todo"
+        self._item_type_set = True
+        super().__post_init__()
+        
+        # 数据验证和转换
         if isinstance(self.priority, str):
             self.priority = Priority.from_string(self.priority)
-        if isinstance(self.priority, int):
+        elif isinstance(self.priority, int):
             try:
                 self.priority = Priority(self.priority)
             except ValueError:
                 self.priority = Priority.MEDIUM
+
+    @property
+    def text(self) -> str:
+        """向后兼容性接口 - 返回描述文本"""
+        return self.description
+
+    @text.setter  
+    def text(self, value: str) -> None:
+        """向后兼容性接口 - 设置描述文本"""
+        self.description = value
+
+    def to_dict(self) -> Dict[str, Any]:
+        """序列化为字典，包含所有待办事项字段"""
+        base_dict = super().to_dict()
+        base_dict.update({
+            "text": self.description,  # 保持向后兼容
+            "done": self.done,
+            "priority": self.priority.value,
+            "deadline": self.deadline.toString() if self.deadline else None,
+            "createtime": self.created_time.strftime('%Y-%m-%d'),  # 兼容旧格式
+            "donetime": self.donetime.toString() if self.donetime else None,
+            "consume_time": self.consume_time
+        })
+        return base_dict
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'TodoItem':
+        """从字典反序列化待办事项对象
+        
+        Args:
+            data: 包含待办事项数据的字典
+            
+        Returns:
+            反序列化后的TodoItem实例
+        """
+        # 处理时间字段的兼容性
+        created_time = data.get("created_time")
+        if created_time:
+            try:
+                created_time = datetime.fromisoformat(created_time)
+            except ValueError:
+                created_time = datetime.now()
+        else:
+            # 兼容旧格式的createtime字段
+            createtime_str = data.get("createtime")
+            if createtime_str:
+                try:
+                    created_time = datetime.strptime(createtime_str, '%Y-%m-%d')
+                except ValueError:
+                    created_time = datetime.now()
+            else:
+                created_time = datetime.now()
+        
+        return cls(
+            description=data.get("text", data.get("description", "")),
+            category=data.get("category", "default"),
+            created_time=created_time,
+            done=data.get("done", False),
+            priority=Priority(data.get("priority", Priority.MEDIUM.value)),
+            deadline=QDate.fromString(data["deadline"]) if data.get("deadline") else None,
+            donetime=QDate.fromString(data["donetime"]) if data.get("donetime") else None,
+            consume_time=data.get("consume_time", 0)
+        )
 
 class TodoModel(BaseModel):
     """待办事项的核心模型"""
@@ -56,33 +155,11 @@ class TodoModel(BaseModel):
 
     def _dict_to_item(self, data: dict) -> TodoItem:
         """将字典转换为 TodoItem 对象"""
-        # 处理日期字段
-        for key in ['deadline', 'createtime', 'donetime']:
-            if data.get(key):
-                data[key] = QDate.fromString(data[key], Qt.ISODate)
-        
-        # 处理优先级字段
-        if 'priority' in data:
-            if isinstance(data['priority'], int):
-                try:
-                    data['priority'] = Priority(data['priority'])
-                except ValueError:
-                    data['priority'] = Priority.MEDIUM
-            elif isinstance(data['priority'], str):
-                data['priority'] = Priority.from_string(data['priority'])
-        
-        return TodoItem(**data)
+        return TodoItem.from_dict(data)
 
     def _item_to_dict(self, item: TodoItem) -> dict:
         """将 TodoItem 转换为字典"""
-        data = asdict(item)
-        # 处理日期和枚举序列化
-        for key in ['deadline', 'createtime', 'donetime']:
-            if data.get(key) and isinstance(data[key], QDate):
-                data[key] = data[key].toString(Qt.ISODate)
-        if isinstance(data.get('priority'), Priority):
-            data['priority'] = data['priority'].value
-        return data
+        return item.to_dict()
 
     def add_item(self, item: TodoItem):
         """在列表末尾添加一个新项目"""

@@ -98,8 +98,14 @@ def main():
         # 3. 初始化MVC组件
         KEY_PATH = "config/brilliant-balm-465903-g3-e308e8638139.json"
         USER_ID = "default_user"  # 可根据实际需求动态生成
+        
+        # 初始化数据模型
+        from model.event_model import EventModel
         model = TodoModel(USER_ID, KEY_PATH)
-        view = MainWindow(config)
+        event_model = EventModel(USER_ID, KEY_PATH)
+        
+        # 初始化视图，传递event_model
+        view = MainWindow(config, event_model)
         delegate = TodoDelegate(config)
         controller = AppController(model, view)
 

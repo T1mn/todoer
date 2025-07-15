@@ -1,5 +1,6 @@
 from .base_model import BaseModel
+from .base_item import BaseItem
 from .todo_model import TodoModel, TodoItem, Priority
-from .event_model import EventModel, EventRecord
+from .event_model import EventModel, RecordItem, EventRecord  # EventRecord作为别名保持兼容
 
-__all__ = ['BaseModel', 'TodoModel', 'TodoItem', 'Priority', 'EventModel', 'EventRecord'] 
+__all__ = ['BaseModel', 'BaseItem', 'TodoModel', 'TodoItem', 'Priority', 'EventModel', 'RecordItem', 'EventRecord'] 

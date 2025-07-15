@@ -1,1 +1,48 @@
-{"events": []}
+{
+  "events": [
+    {
+      "description": "测试完成Time List功能",
+      "category": "study",
+      "created_time": "2025-07-15T14:56:57.540617",
+      "item_type": "record",
+      "event_description": "测试完成Time List功能",
+      "start_time": "2025-07-15T10:13:18.006137",
+      "end_time": "2025-07-15T10:13:19.006278",
+      "duration_seconds": 1,
+      "event_type": "pomodoro"
+    },
+    {
+      "description": "测试完成Time List功能",
+      "category": "study",
+      "created_time": "2025-07-15T14:56:57.540629",
+      "item_type": "record",
+      "event_description": "测试完成Time List功能",
+      "start_time": "2025-07-15T10:13:19.007740",
+      "end_time": "2025-07-15T10:13:20.007839",
+      "duration_seconds": 1,
+      "event_type": "pomodoro"
+    },
+    {
+      "description": "测试事件 1",
+      "category": "work",
+      "created_time": "2025-07-15T14:56:57.540633",
+      "item_type": "record",
+      "event_description": "测试事件 1",
+      "start_time": "2025-07-15T10:13:20.008148",
+      "end_time": "2025-07-15T10:13:20.508230",
+      "duration_seconds": 0,
+      "event_type": "pomodoro"
+    },
+    {
+      "description": "测试完成Time List功能",
+      "category": "study",
+      "created_time": "2025-07-15T14:56:57.540636",
+      "item_type": "record",
+      "event_description": "测试完成Time List功能",
+      "start_time": "2025-07-15T10:13:41.770481",
+      "end_time": "2025-07-15T10:13:42.770625",
+      "duration_seconds": 1,
+      "event_type": "pomodoro"
+    }
+  ]
+}

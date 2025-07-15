@@ -60,21 +60,53 @@ class AppController(QObject):
         self._view.toggle_item_requested.connect(self.toggle_item)
         self._view.sort_items_requested.connect(self.sort_items)
         self._view.save_requested.connect(self._model.save)
-        self._view.load_requested.connect(self._model.load)
         
         # 连接云同步信号
         self._view.upload_requested.connect(self._cloud_sync_handler.handle_upload_request)
         self._view.download_requested.connect(self._cloud_sync_handler.handle_download_request)
         
-        # 连接列表视图的新信号
-        try:
-            list_view = self._view.get_list_view()
-            list_view.delete_item_requested.connect(self.confirm_delete_item)
-            list_view.show_info_requested.connect(self.show_item_info)
-        except Exception as e:
-            print(f"警告：信号连接失败: {e}")
+        # 监听视图切换事件
+        if hasattr(self._view, 'toggle_buttons'):
+            self._view.toggle_buttons.mode_changed.connect(self._on_view_mode_changed)
+        
+        # 初始连接当前列表视图的信号
+        self._connect_current_list_view_signals()
 
-    
+    def _on_view_mode_changed(self, mode: str):
+        """处理视图模式切换，重新连接信号"""
+        print(f"🔄 [信号调试] 视图模式切换到: {mode}")
+        # 重新连接当前活动视图的信号
+        self._connect_current_list_view_signals()
+
+    def _connect_current_list_view_signals(self):
+        """连接当前活动列表视图的右键菜单信号"""
+        try:
+            # 断开所有可能的旧连接，避免重复连接
+            if hasattr(self._view, 'todo_list_view'):
+                try:
+                    self._view.todo_list_view.delete_item_requested.disconnect(self.confirm_delete_item)
+                    self._view.todo_list_view.show_info_requested.disconnect(self.show_item_info)
+                except:
+                    pass
+            
+            if hasattr(self._view, 'time_list_view') and self._view.time_list_view:
+                try:
+                    self._view.time_list_view.delete_item_requested.disconnect(self.confirm_delete_item)
+                    self._view.time_list_view.show_info_requested.disconnect(self.show_item_info)
+                except:
+                    pass
+            
+            # 连接当前活动视图的信号
+            current_view = self._view.get_list_view()
+            if current_view:
+                current_view.delete_item_requested.connect(self.confirm_delete_item)
+                current_view.show_info_requested.connect(self.show_item_info)
+                print(f"✅ [信号调试] 已连接 {current_view.__class__.__name__} 的右键菜单信号")
+            else:
+                print("❌ [信号调试] 无法获取当前列表视图")
+                
+        except Exception as e:
+            print(f"❌ [信号调试] 连接列表视图信号失败: {e}")
 
     def _delayed_save(self):
         """延迟保存数据，避免在模型更新期间立即保存"""
@@ -108,7 +140,7 @@ class AppController(QObject):
                 clean_text = clean_text.replace(category_tag, '')
             clean_text = clean_text.strip()
 
-            item = TodoItem(text=clean_text, deadline=deadline, category=category, priority=priority)
+            item = TodoItem(description=clean_text, deadline=deadline, category=category, priority=priority)
             self._model.add_item(item)
             # 使用延迟保存
             self._schedule_save()
@@ -140,36 +172,64 @@ class AppController(QObject):
             return
             
         try:
-            item = index.data(Qt.UserRole)
-            print(f"📋 [删除调试] 获取项目数据: {item.text if item else 'None'}")
+            from model.base_item import BaseItem
             
+            item = index.data(Qt.UserRole)
             if not item:
                 print("❌ [删除调试] 无法获取项目数据，退出删除操作")
                 return
                 
-            # 创建确认对话框
-            msg_box = QMessageBox(self._view)
-            msg_box.setWindowTitle("确认删除")
-            msg_box.setText(f"确定要删除任务吗？\n\n任务内容：{item.text}")
-            msg_box.setIcon(QMessageBox.Question)
-            msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            msg_box.setDefaultButton(QMessageBox.No)
-            
-            # 应用圆角样式
-            # msg_box.setStyleSheet("""...""") # Style is now handled globally
-            
-            print("💬 [删除调试] 显示确认对话框...")
-            # 使用异步方式处理确认结果，避免阻塞
-            result = msg_box.exec_()
-            print(f"✅ [删除调试] 用户选择: {'是' if result == QMessageBox.Yes else '否'}")
-            
-            if result == QMessageBox.Yes:
-                # 延迟执行删除操作，让确认对话框完全关闭
-                print("🗑️ [删除调试] 执行删除操作...")
-                QTimer.singleShot(50, lambda: self.delete_item(index))
+            # 统一处理BaseItem类型
+            if isinstance(item, BaseItem):
+                print(f"📋 [删除调试] 获取{item.item_type}数据: {item.description}")
+                
+                # 使用统一的确认对话框
+                if self._dialog_manager.confirm_delete(item):
+                    print("✅ [删除调试] 用户确认删除")
+                    QTimer.singleShot(50, lambda: self._execute_delete_item(index, item))
+                else:
+                    print("ℹ️ [删除调试] 用户取消删除")
+            else:
+                print(f"❌ [删除调试] 不支持的项目类型: {type(item)}")
+                return
                 
         except Exception as e:
             print(f"❌ [删除调试] 确认删除时出错: {e}")
+
+    def _execute_delete_item(self, index: QModelIndex, item):
+        """执行具体的删除操作"""
+        try:
+            from model.base_item import BaseItem
+            
+            if not isinstance(item, BaseItem):
+                print(f"❌ [删除调试] 不支持的项目类型: {type(item)}")
+                return
+                
+            current_view = self._view.get_list_view()
+            
+            if item.item_type == "todo":
+                # 删除待办事项
+                print("🗑️ [删除调试] 删除待办事项")
+                self.delete_item(index)
+            elif item.item_type == "record":
+                # 删除时间记录
+                print("🗑️ [删除调试] 删除时间记录")
+                if hasattr(current_view, 'event_model'):
+                    row = index.row()
+                    if current_view.event_model.delete_event(row):
+                        print(f"✅ [删除调试] 时间记录删除成功")
+                        # 刷新TimeListView显示
+                        if hasattr(current_view, 'time_model'):
+                            current_view.time_model.refresh()
+                    else:
+                        print(f"❌ [删除调试] 时间记录删除失败")
+                else:
+                    print("❌ [删除调试] 当前视图没有event_model")
+            else:
+                print(f"❌ [删除调试] 不支持的项目类型: {item.item_type}")
+                
+        except Exception as e:
+            print(f"❌ [删除调试] 执行删除操作时出错: {e}")
 
     def show_item_info(self, index: QModelIndex):
         if not index.isValid():

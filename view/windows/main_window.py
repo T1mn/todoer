@@ -1,9 +1,11 @@
 from PySide6.QtCore import Qt, Signal, QPoint, QModelIndex
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QApplication
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QApplication, QStackedWidget
 from PySide6.QtGui import QKeySequence, QShortcut
 
 from view.widgets.ai_line_edit import AILineEdit
 from view.widgets.todo_list_view import TodoListView
+from view.widgets.time_list_view import TimeListView
+from view.widgets.list_toggle_buttons import ListToggleButtons
 from view.utils import load_stylesheet
 
 class MainWindow(QWidget):
@@ -14,13 +16,13 @@ class MainWindow(QWidget):
     toggle_item_requested = Signal(QModelIndex)
     sort_items_requested = Signal()
     save_requested = Signal()
-    load_requested = Signal()
     upload_requested = Signal()
     download_requested = Signal()
     
-    def __init__(self, config: dict, parent=None):
+    def __init__(self, config: dict, event_model=None, parent=None):
         super().__init__(parent)
         self.config = config
+        self.event_model = event_model
         self.old_pos = None
         self._init_ui()
 
@@ -63,8 +65,21 @@ class MainWindow(QWidget):
         self.input_lineedit.setInputMethodHints(Qt.ImhNone)
         self.input_lineedit.setAttribute(Qt.WA_InputMethodEnabled, True)
         
-        self.list_view = TodoListView()
-        self.load_btn = QPushButton('Load')
+        # 创建切换按钮
+        self.toggle_buttons = ListToggleButtons()
+        
+        # 创建堆叠视图管理器
+        self.list_stack = QStackedWidget()
+        self.todo_list_view = TodoListView()
+        self.time_list_view = TimeListView(self.event_model) if self.event_model else None
+        
+        self.list_stack.addWidget(self.todo_list_view)
+        if self.time_list_view:
+            self.list_stack.addWidget(self.time_list_view)
+        
+        # 保持向后兼容，list_view指向当前活动视图
+        self.list_view = self.todo_list_view
+        
         self.sort_btn = QPushButton('Sort')
         self.upload_btn = QPushButton('上传云端')
         self.download_btn = QPushButton('下载云端')
@@ -78,16 +93,20 @@ class MainWindow(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         
+        # 输入区域：AI输入框 + 切换按钮
+        input_layout = QHBoxLayout()
+        input_layout.addWidget(self.input_lineedit, 1)  # 拉伸占主要空间
+        input_layout.addWidget(self.toggle_buttons)
+        
         self.btn_layout = QHBoxLayout()
-        self.btn_layout.addWidget(self.load_btn)
         self.btn_layout.addWidget(self.sort_btn)
         self.btn_layout.addWidget(self.upload_btn)
         self.btn_layout.addWidget(self.download_btn)
         
         self.main_layout.addWidget(self.status_bar)
-        self.main_layout.addWidget(self.input_lineedit)
+        self.main_layout.addLayout(input_layout)
         self.main_layout.addLayout(self.btn_layout)
-        self.main_layout.addWidget(self.list_view)
+        self.main_layout.addWidget(self.list_stack)
 
     def add_widget_to_button_layout(self, widget, position):
         """向按钮布局中添加一个小部件"""
@@ -97,11 +116,16 @@ class MainWindow(QWidget):
         """连接内部控件的信号到视图的主信号"""
         self.input_lineedit.returnPressed.connect(self._on_add_item)
         self.input_lineedit.ai_parse_requested.connect(self.ai_parse_requested)
-        self.load_btn.clicked.connect(self.load_requested)
+        
+        # 新增切换按钮信号
+        self.toggle_buttons.mode_changed.connect(self._on_mode_changed)
+        
         self.sort_btn.clicked.connect(self.sort_items_requested)
         self.upload_btn.clicked.connect(self.upload_requested)
         self.download_btn.clicked.connect(self.download_requested)
-        self.list_view.item_double_clicked.connect(self.toggle_item_requested)
+        
+        # 连接当前活动视图的信号
+        self._connect_current_list_signals()
 
         quit_shortcut = QShortcut(QKeySequence("Ctrl+W"), self)
         quit_shortcut.activated.connect(self._quit_application)
@@ -150,6 +174,33 @@ class MainWindow(QWidget):
         else:
             self.show() 
 
+    def _on_mode_changed(self, mode: str):
+        """处理模式切换"""
+        if mode == "todo":
+            self.list_stack.setCurrentWidget(self.todo_list_view)
+            self.list_view = self.todo_list_view
+        elif mode == "time" and self.time_list_view:
+            self.list_stack.setCurrentWidget(self.time_list_view)
+            self.list_view = self.time_list_view
+        
+        # 重新连接当前活动视图的信号
+        self._connect_current_list_signals()
+    
+    def _connect_current_list_signals(self):
+        """连接当前活动视图的信号"""
+        # 断开之前的连接
+        try:
+            self.todo_list_view.item_double_clicked.disconnect()
+            if self.time_list_view:
+                self.time_list_view.item_double_clicked.disconnect()
+        except:
+            pass
+        
+        # 连接当前活动视图的信号
+        current_view = self.list_stack.currentWidget()
+        if current_view:
+            current_view.item_double_clicked.connect(self.toggle_item_requested)
+
     def get_list_view(self):
-        """获取列表视图对象，供控制器使用"""
+        """获取当前活动的列表视图对象，供控制器使用"""
         return self.list_view

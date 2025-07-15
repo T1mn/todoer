@@ -39,7 +39,7 @@ class AIConverter:
         
         # 创建 TodoItem
         todo_item = TodoItem(
-            text=ai_item.text,
+            description=ai_item.text,
             priority=priority,
             category=category,
             deadline=deadline
