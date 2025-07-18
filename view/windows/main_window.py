@@ -4,7 +4,7 @@ from PySide6.QtGui import QKeySequence, QShortcut
 
 from view.widgets.ai_line_edit import AILineEdit
 from view.widgets.todo_list_view import TodoListView
-from view.widgets.time_list_view import TimeListView
+from view.widgets.event_list_view import EventListView
 from view.widgets.list_toggle_buttons import ListToggleButtons
 from view.utils import load_stylesheet
 
@@ -40,7 +40,7 @@ class MainWindow(QWidget):
         self.setWindowTitle('To-Do List')
         self.setGeometry(0, 0, ui_cfg['window_width'], ui_cfg['window_height'])
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self._center_on_secondary_screen()
+        # self._center_on_secondary_screen()
         self._apply_stylesheet()
 
     def _apply_stylesheet(self):
@@ -48,21 +48,20 @@ class MainWindow(QWidget):
         style = load_stylesheet("view/assets/styles/dark_theme.qss")
         self.setStyleSheet(style)
 
-    def _center_on_secondary_screen(self):
-        """将窗口移动到副显示器的右下角"""
-        screens = QApplication.screens()
-        if not screens:
-            return
+    # def _center_on_secondary_screen(self):
+    #     """将窗口移动到副显示器的右下角"""
+    #     screens = QApplication.screens()
+    #     if not screens:
+    #         return
         
-        primary_screen = screens[0].geometry()
-        target_screen = screens[1].availableGeometry() if len(screens) > 1 else primary_screen
+    #     primary_screen = screens[0].geometry()
+    #     target_screen = screens[1].availableGeometry() if len(screens) > 1 else primary_screen
         
-        self.move(target_screen.right() - self.width(), target_screen.bottom() - self.height())
+    #     self.move(target_screen.right() - self.width(), target_screen.bottom() - self.height())
 
     def _setup_widgets(self):
         """创建UI控件"""
         self.input_lineedit = AILineEdit()
-        self.input_lineedit.setInputMethodHints(Qt.ImhNone)
         self.input_lineedit.setAttribute(Qt.WA_InputMethodEnabled, True)
         
         # 创建切换按钮
@@ -71,11 +70,11 @@ class MainWindow(QWidget):
         # 创建堆叠视图管理器
         self.list_stack = QStackedWidget()
         self.todo_list_view = TodoListView()
-        self.time_list_view = TimeListView(self.event_model) if self.event_model else None
+        self.event_list_view = EventListView(self.event_model) if self.event_model else None
         
         self.list_stack.addWidget(self.todo_list_view)
-        if self.time_list_view:
-            self.list_stack.addWidget(self.time_list_view)
+        if self.event_list_view:
+            self.list_stack.addWidget(self.event_list_view)
         
         # 保持向后兼容，list_view指向当前活动视图
         self.list_view = self.todo_list_view
@@ -179,9 +178,9 @@ class MainWindow(QWidget):
         if mode == "todo":
             self.list_stack.setCurrentWidget(self.todo_list_view)
             self.list_view = self.todo_list_view
-        elif mode == "time" and self.time_list_view:
-            self.list_stack.setCurrentWidget(self.time_list_view)
-            self.list_view = self.time_list_view
+        elif mode == "time" and self.event_list_view:
+            self.list_stack.setCurrentWidget(self.event_list_view)
+            self.list_view = self.event_list_view
         
         # 重新连接当前活动视图的信号
         self._connect_current_list_signals()
@@ -191,8 +190,8 @@ class MainWindow(QWidget):
         # 断开之前的连接
         try:
             self.todo_list_view.item_double_clicked.disconnect()
-            if self.time_list_view:
-                self.time_list_view.item_double_clicked.disconnect()
+            if self.event_list_view:
+                self.event_list_view.item_double_clicked.disconnect()
         except:
             pass
         

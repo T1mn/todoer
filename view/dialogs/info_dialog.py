@@ -84,7 +84,7 @@ class InfoDialog(QDialog):
         
         if item.start_time:
             self._add_info_row(layout, "开始时间", self._format_datetime(item.start_time))
-        
+
         if item.end_time:
             self._add_info_row(layout, "结束时间", self._format_datetime(item.end_time))
         

@@ -1,10 +1,9 @@
 from view.widgets.base_list_view import BaseListView
 from PySide6.QtCore import QAbstractListModel, Qt, QModelIndex
-from model.event_model import EventRecord
 from datetime import datetime
 
 
-class TimeListModel(QAbstractListModel):
+class EventListModel(QAbstractListModel):
     """时间记录列表的数据模型"""
     
     def __init__(self, event_model, parent=None):
@@ -48,7 +47,7 @@ class TimeListModel(QAbstractListModel):
         self.endResetModel()
 
 
-class TimeListView(BaseListView):
+class EventListView(BaseListView):
     """
     时间记录列表视图
     显示已完成的时钟倒计时项目
@@ -62,8 +61,8 @@ class TimeListView(BaseListView):
     
     def _setup_model(self):
         """设置数据模型"""
-        self.time_model = TimeListModel(self.event_model)
-        self.setModel(self.time_model)
+        self.event_list_model = EventListModel(self.event_model)
+        self.setModel(self.event_list_model)
     
     def _connect_event_model_signals(self):
         """连接事件模型信号"""
@@ -72,7 +71,7 @@ class TimeListView(BaseListView):
     
     def _on_event_saved(self, description):
         """当新事件保存时刷新列表"""
-        self.time_model.refresh()
+        self.event_list_model.refresh()
     
     def get_display_name(self) -> str:
         """返回列表类型名称"""
@@ -89,4 +88,4 @@ class TimeListView(BaseListView):
     
     def refresh_data(self):
         """刷新数据"""
-        self.time_model.refresh() 
+        self.event_list_model.refresh() 

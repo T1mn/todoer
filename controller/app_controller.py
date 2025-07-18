@@ -9,6 +9,7 @@ from controller.timer_controller import TimerController
 from utils.data_converter import DataConverter
 from utils.ai_service import GeminiService
 from utils.ai_converter import AIConverter
+from utils.item_factory import ItemFactory
 from .ai_parse_handler import AIParseHandler
 from .cloud_sync_handler import CloudSyncHandler
 from .dialog_manager import DialogManager
@@ -89,10 +90,10 @@ class AppController(QObject):
                 except:
                     pass
             
-            if hasattr(self._view, 'time_list_view') and self._view.time_list_view:
+            if hasattr(self._view, 'event_list_view') and self._view.event_list_view:
                 try:
-                    self._view.time_list_view.delete_item_requested.disconnect(self.confirm_delete_item)
-                    self._view.time_list_view.show_info_requested.disconnect(self.show_item_info)
+                    self._view.event_list_view.delete_item_requested.disconnect(self.confirm_delete_item)
+                    self._view.event_list_view.show_info_requested.disconnect(self.show_item_info)
                 except:
                     pass
             
@@ -123,26 +124,8 @@ class AppController(QObject):
     def add_item(self, text: str):
         """处理添加新项目的请求"""
         try:
-            # 解析截止日期
-            deadline, clean_text = DataConverter.convert_text_to_date(text)
-            
-            # 解析优先级
-            priority, clean_text = DataConverter.convert_text_to_priority(clean_text)
-            
-            # 解析类别
-            category = "default"
-            if '#工作' in text or '#work' in text: category = "work"
-            elif '#生活' in text or '#life' in text: category = "life"
-            elif '#学习' in text or '#study' in text: category = "study"
-
-            # 清理文本（移除所有标识符）
-            for category_tag in ['#工作', '#work', '#生活', '#life', '#学习', '#study']:
-                clean_text = clean_text.replace(category_tag, '')
-            clean_text = clean_text.strip()
-
-            item = TodoItem(description=clean_text, deadline=deadline, category=category, priority=priority)
+            item = ItemFactory.create_from_clean_text(text)
             self._model.add_item(item)
-            # 使用延迟保存
             self._schedule_save()
         except Exception as e:
             print(f"添加项目时出错: {e}")
@@ -185,10 +168,7 @@ class AppController(QObject):
                 
                 # 使用统一的确认对话框
                 if self._dialog_manager.confirm_delete(item):
-                    print("✅ [删除调试] 用户确认删除")
                     QTimer.singleShot(50, lambda: self._execute_delete_item(index, item))
-                else:
-                    print("ℹ️ [删除调试] 用户取消删除")
             else:
                 print(f"❌ [删除调试] 不支持的项目类型: {type(item)}")
                 return
@@ -209,16 +189,14 @@ class AppController(QObject):
             
             if item.item_type == "todo":
                 # 删除待办事项
-                print("🗑️ [删除调试] 删除待办事项")
                 self.delete_item(index)
             elif item.item_type == "record":
                 # 删除时间记录
-                print("🗑️ [删除调试] 删除时间记录")
                 if hasattr(current_view, 'event_model'):
                     row = index.row()
                     if current_view.event_model.delete_event(row):
                         print(f"✅ [删除调试] 时间记录删除成功")
-                        # 刷新TimeListView显示
+                        # 刷新EventListView显示
                         if hasattr(current_view, 'time_model'):
                             current_view.time_model.refresh()
                     else:

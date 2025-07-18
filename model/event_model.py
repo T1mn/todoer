@@ -106,9 +106,6 @@ class RecordItem(BaseItem):
         )
 
 
-# 向后兼容性别名
-EventRecord = RecordItem
-
 class EventModel(BaseModel):
     event_saved = Signal(str)
 
